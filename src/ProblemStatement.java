@@ -1,147 +1,127 @@
 import java.util.*;
 import java.util.*;
-class Log {
-    String accountId;
-
-    public Log(String accountId) {
-        this.accountId = accountId;
-    }
-
-    public String toString() {
-        return accountId;
-    }
+class Counter {
+    int count = 0;
 }
 
 // ---------------- SEARCH SYSTEM ----------------
-class SearchSystem {
+class RiskSearch {
 
-    // ----------- LINEAR SEARCH (FIRST & LAST) -----------
-    public static void linearSearch(Log[] logs, String target) {
-        int first = -1, last = -1;
+    // ----------- LINEAR SEARCH (UNSORTED) -----------
+    public static void linearSearch(int[] arr, int target) {
         int comparisons = 0;
+        boolean found = false;
 
-        for (int i = 0; i < logs.length; i++) {
+        for (int i = 0; i < arr.length; i++) {
             comparisons++;
 
-            if (logs[i].accountId.equals(target)) {
-                if (first == -1) first = i;
-                last = i;
+            if (arr[i] == target) {
+                System.out.println("Linear: Found at index " + i);
+                found = true;
+                break;
             }
         }
 
-        System.out.println("Linear Search:");
-        if (first != -1) {
-            System.out.println("First occurrence: " + first);
-            System.out.println("Last occurrence: " + last);
-        } else {
-            System.out.println("Not found");
+        if (!found) {
+            System.out.println("Linear: Not found");
         }
+
         System.out.println("Comparisons: " + comparisons);
         System.out.println("Time Complexity: O(n)\n");
     }
 
-    // ----------- BINARY SEARCH (FIND ONE) -----------
-    public static int binarySearch(Log[] logs, String target, Counter counter) {
-        int low = 0, high = logs.length - 1;
+    // ----------- BINARY SEARCH (EXACT MATCH) -----------
+    public static int binarySearch(int[] arr, int target, Counter c) {
+        int low = 0, high = arr.length - 1;
 
         while (low <= high) {
             int mid = (low + high) / 2;
-            counter.count++;
+            c.count++;
 
-            int cmp = logs[mid].accountId.compareTo(target);
-
-            if (cmp == 0) return mid;
-            else if (cmp < 0) low = mid + 1;
+            if (arr[mid] == target) return mid;
+            else if (arr[mid] < target) low = mid + 1;
             else high = mid - 1;
         }
 
         return -1;
     }
 
-    // ----------- COUNT OCCURRENCES (LEFT + RIGHT) -----------
-    public static int countOccurrences(Log[] logs, String target, Counter counter) {
-        int index = binarySearch(logs, target, counter);
+    // ----------- LOWER BOUND (INSERTION POINT) -----------
+    public static int lowerBound(int[] arr, int target, Counter c) {
+        int low = 0, high = arr.length;
 
-        if (index == -1) return 0;
+        while (low < high) {
+            int mid = (low + high) / 2;
+            c.count++;
 
-        int count = 1;
-
-        // Left side
-        int left = index - 1;
-        while (left >= 0) {
-            counter.count++;
-            if (logs[left].accountId.equals(target)) {
-                count++;
-                left--;
-            } else break;
+            if (arr[mid] < target)
+                low = mid + 1;
+            else
+                high = mid;
         }
 
-        // Right side
-        int right = index + 1;
-        while (right < logs.length) {
-            counter.count++;
-            if (logs[right].accountId.equals(target)) {
-                count++;
-                right++;
-            } else break;
-        }
-
-        return count;
+        return low; // insertion index
     }
 
-    // ----------- SORT LOGS (REQUIRED FOR BINARY) -----------
-    public static void sortLogs(Log[] logs) {
-        Arrays.sort(logs, Comparator.comparing(l -> l.accountId));
+    // ----------- FLOOR & CEILING -----------
+    public static void floorCeil(int[] arr, int target, Counter c) {
+        int index = lowerBound(arr, target, c);
+
+        Integer floor = null, ceil = null;
+
+        if (index < arr.length && arr[index] == target) {
+            floor = ceil = arr[index];
+        } else {
+            if (index - 1 >= 0) floor = arr[index - 1];
+            if (index < arr.length) ceil = arr[index];
+        }
+
+        System.out.println("Floor: " + (floor != null ? floor : "None"));
+        System.out.println("Ceiling: " + (ceil != null ? ceil : "None"));
     }
 
     // ----------- PRINT --------
-    public static void print(Log[] logs) {
-        for (Log l : logs) {
-            System.out.print(l + " ");
+    public static void print(int[] arr) {
+        for (int x : arr) {
+            System.out.print(x + " ");
         }
         System.out.println();
     }
 }
 
-// ---------------- COUNTER CLASS ----------------
-class Counter {
-    int count = 0;
-}
-
 public class ProblemStatement {
     public static void main(String[] args) {
-        Log[] logs = {
-                new Log("accB"),
-                new Log("accA"),
-                new Log("accB"),
-                new Log("accC")
-        };
+        // Unsorted for linear search
+        int[] unsorted = {50, 10, 100, 25};
 
-        String target = "accB";
+        // Sorted for binary search
+        int[] sorted = {10, 25, 50, 100};
+
+        int target = 30;
 
         // -------- LINEAR SEARCH --------
-        SearchSystem.linearSearch(logs, target);
+        RiskSearch.linearSearch(unsorted, target);
 
-        // -------- SORT FOR BINARY --------
-        SearchSystem.sortLogs(logs);
-        System.out.println("Sorted Logs:");
-        SearchSystem.print(logs);
-
-        // -------- BINARY SEARCH + COUNT --------
+        // -------- BINARY SEARCH --------
         Counter counter = new Counter();
 
-        int index = SearchSystem.binarySearch(logs, target, counter);
-        int occurrences = SearchSystem.countOccurrences(logs, target, counter);
+        int index = RiskSearch.binarySearch(sorted, target, counter);
 
-        System.out.println("\nBinary Search:");
+        System.out.println("Binary Search:");
         if (index != -1) {
-            System.out.println("Found at index: " + index);
-            System.out.println("Total occurrences: " + occurrences);
+            System.out.println("Found at index " + index);
         } else {
             System.out.println("Not found");
         }
 
-        System.out.println("Comparisons: " + counter.count);
+        // -------- FLOOR & CEILING --------
+        RiskSearch.floorCeil(sorted, target, counter);
+
+        // -------- INSERTION POINT --------
+        int insertionIndex = RiskSearch.lowerBound(sorted, target, counter);
+        System.out.println("Insertion Index: " + insertionIndex);
+
+        System.out.println("Total Comparisons: " + counter.count);
         System.out.println("Time Complexity: O(log n)");
     }
 }
